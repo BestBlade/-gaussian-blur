@@ -1,10 +1,10 @@
 /*
-*©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
-*©¦¡¡Ãè    Êö£º¸ù¾İÔ­Àí±àĞ´³ÌĞò£¬ÊµÏÖ¸ßË¹Ä£ºı													   ©¦
-*©¦¡¡×÷    Õß£ºÄ²ÖÅèë|BestBlade																	   ©¦
-*©¦¡¡°æ    ±¾£º1.0																			   	   ©¦
-*©¦¡¡´´½¨Ê±¼ä£º2020.07.11																		   ©¦
-*©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
+*â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+*â”‚ã€€æ    è¿°ï¼šæ ¹æ®åŸç†ç¼–å†™ç¨‹åºï¼Œå®ç°é«˜æ–¯æ¨¡ç³Š													   â”‚
+*â”‚ã€€ä½œ    è€…ï¼šç‰Ÿå³™æ¡¦|BestBlade																	   â”‚
+*â”‚ã€€ç‰ˆ    æœ¬ï¼š2.0																			   	   â”‚
+*â”‚ã€€åˆ›å»ºæ—¶é—´ï¼š2020.07.11																		   â”‚
+*â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 */
 
 #include <iostream>
@@ -12,98 +12,105 @@
 #include<opencv2/highgui/highgui.hpp>  
 #include"opencv2/imgproc/imgproc.hpp"
 #include <stdio.h>
-#include <math.h>																				/*	exp()º¯Êı	*/
+#include <math.h>																				/*	exp()å‡½æ•°	*/
 
 using namespace std;
 using namespace cv;
 
-int Gaussian_blur(Mat origin_pic, Mat& result_pic, Size ksize, double sigma)
-{
-	int kw = ksize.width;
-	int kh = ksize.height;
-
-	result_pic = origin_pic.clone();
-
-	int row = origin_pic.rows;
-	int col = origin_pic.cols;
-																								/*	¼òµ¥ÅĞ¶¨Í¼Æ¬²ÎÊıÊÇ·ñÕıÈ·	*/
-	if ((row < kw) && (col < kh))
-	{
-		return -1;																				/*	Í¼Æ¬³ß´ç¹ıĞ¡	*/
+Mat mygaussianBlur(Mat img, Size temp, double sigma) {
+	if (img.rows < temp.height || img.cols < temp.width) {
+		cerr << "the size of template is not match the original picture" << endl;
 	}
-	else
-		if ((kw % 2 == 0) || (kh % 2 == 0))
-		{
-			return -2;																			/*	Æ½»¬´°¿Ú³ß´ç´íÎó	*/
-		}
-		else
-		{
-			int row_start = kw / 2;
-			int col_start = kh / 2;
+	if (temp.height >> 1 || temp.width >> 1) {
+		cerr << "template is not 2N+1 size" << endl;
+	}
+	Mat res(img.rows, img.cols, img.type());
+	int row_start = temp.height >> 1;
+	int col_start = temp.width >> 1;
 
-			for (int i = row_start; i < row - row_start; i++)
-			{
-				for (int j = col_start; j < col - col_start; j++)								/*	Ñ­»·Í¼ÏñµÚ(i,j)¸öÏñËØ	*/
-				{
-					double channel_r = { 0 };
-					double channel_g = { 0 };
-					double channel_b = { 0 };
-					double wij_sum	 = { 0 };													/*	¶¨ÒåÈ¨ÖØ×ÜºÍ	*/
+	if (res.channels() == 1) {
+		for (int x = row_start; x < res.rows - row_start; x++) {
+			for (int y = col_start; y < res.cols - col_start; y++) {
+				//è®¡ç®—æƒé‡æ€»å’Œ
+				double wij_sum = 0;
+				for (int p = x - row_start; p <= x + row_start; p++) {
+					for (int q = y - col_start; q <= y + col_start; q++) {
+						int wi = x - p;
+						int wj = y - q;
 
-					for (int p = i - row_start; p <= i + row_start; p++)
-					{
-						for (int q = j - col_start; q <= j + col_start; q++)					/*	ÔÚµÚ(i,j)ÏñËØÖÜÎ§µÄksize(weight,height)¸öÏñËØÖĞ¼ÆËãÈ¨ÖØ×ÜºÍ	*/
-						{
-							int wi = p - i;														/*	¼ÆËãµ±Ç°ÏñËØ¶ÔÖĞĞÄµã(i,j)µÄÏà¶Ô×ø±ê£¬ÏÂÃæÍ¬Àí	*/
-							int wj = q - j;
-
-							double wij = exp(-(wi * wi + wj * wj) / (2 * sigma * sigma));		/*	¼ÆËãÔ­Ê¼¸ßË¹È¨ÖØ	*/
-
-							wij_sum += wij;														/*	µÃµ½È¨ÖØ×ÜºÍ	*/
-						}		
+						double wij = exp(-(wi * wi + wj * wj) / 2 * (sigma * sigma));
+						wij_sum += wij;
 					}
+				}
 
-					for (int p = i - row_start; p <= i + row_start; p++)
-					{
-						for (int q = j - col_start; q <= j + col_start; q++)					/*	ÔÚµÚ(i,j)ÏñËØÖÜÎ§µÄksize(weight,height)¸öÏñËØÖĞ¼ÆËã×ÜºÍ	*/
-						{
-							int wi = p - i;														
-							int wj = q - j;
+				float val = 0;
+				for (int p = x - row_start; p <= x + row_start; p++) {
+					for (int q = y - col_start; q <= y + col_start; q++) {
+						int wi = x - p;
+						int wj = y - q;
 
-							double w_ij = exp(-(wi * wi + wj * wj) / (2 * sigma * sigma)) / wij_sum;	/*	ÓÃÃ¿¸öµãµÄÈ¨ÖØ³ıÒÔÈ¨ÖØ×ÜºÍÒÔ¹éÒ»»¯	*/
+						double wij = exp(-(wi * wi + wj * wj) / 2 * (sigma * sigma)) / wij_sum;
 
-							Vec3b pq = origin_pic.at<Vec3b>(p, q);
-							channel_r += pq[2] * w_ij;											/*	¸÷Í¨µÀ³ËÉÏ¸ßË¹¾ØÕóÈ¨ÖØ	*/
-							channel_g += pq[1] * w_ij;
-							channel_b += pq[0] * w_ij;
+						val += img.at<uchar>(p, q) * wij;
+					}
+				}
+
+				res.at<uchar>(x, y) = uchar(val);
+			}
+		}
+	}
+	//ä¸‰é€šé“å›¾åƒ
+	else {
+		for (int c = 0; c < res.channels(); c++) {
+			for (int x = row_start; x < res.rows - row_start; x++) {
+				for (int y = col_start; y < res.cols - col_start; y++) {
+					//è®¡ç®—æƒé‡æ€»å’Œ
+					double wij_sum = 0;
+					for (int p = x - row_start; p <= x + row_start; p++) {
+						for (int q = y - col_start; q <= y + col_start; q++) {
+							int wi = x - p;
+							int wj = y - q;
+
+							double wij = exp(-(wi * wi + wj * wj) / 2 * (sigma * sigma));
+							wij_sum += wij;
 						}
 					}
-					result_pic.at<Vec3b>(i, j)[0] = saturate_cast<uchar>(channel_b);			/*	¡ºsaturate_cast¡»º¯Êı¿ÉÒÔ±£»¤Êı¾İ²»Òç³ö	*/
-					result_pic.at<Vec3b>(i, j)[1] = saturate_cast<uchar>(channel_g);			/*	ÖØ×é	*/
-					result_pic.at<Vec3b>(i, j)[2] = saturate_cast<uchar>(channel_r);
+
+					float val = 0;
+					for (int p = x - row_start; p <= x + row_start; p++) {
+						for (int q = y - col_start; q <= y + col_start; q++) {
+							int wi = x - p;
+							int wj = y - q;
+
+							double wij = exp(-(wi * wi + wj * wj) / 2 * (sigma * sigma)) / wij_sum;
+
+							val += img.at<Vec3b>(p, q)[c] * wij;
+						}
+					}
+
+					res.at<Vec3b>(x, y)[c] = uchar(val);
 				}
 			}
-			return 0;
 		}
+	}
+	return res;
 }
 
 int main()
 {
-
-
-	Mat origin_pic = imread("C:/Users/Chrysanthemum/Desktop/¿Í»§¶Ë¿ª·¢.JPG");
+	Mat origin_pic = imread("C://Users//Chrysanthemum//Desktop//1.png");
 	Mat result_pic;
 	Size ksize(3, 3);
 	double sigma = 1;
 
-	Gaussian_blur(origin_pic, result_pic, ksize, sigma);										/*	×Ô¶¨Òå¸ßË¹Ä£ºıº¯Êı	*/
+	Mat res = mygaussianBlur(origin_pic,ksize,sigma);										/*	è‡ªå®šä¹‰é«˜æ–¯æ¨¡ç³Šå‡½æ•°	*/
 
-	imshow("Ô­Í¼", origin_pic);
-	imshow("3x3,sigma = 1,Æ½»¬½á¹ûÍ¼", result_pic);
+	imshow("åŸå›¾", origin_pic);
+	imshow("3x3,sigma = 1,å¹³æ»‘ç»“æœå›¾", res);
 
 	Mat result_pic_opencv_blur;
-	GaussianBlur(origin_pic, result_pic_opencv_blur, ksize, sigma, BORDER_DEFAULT);				/*	OPENCV×Ô´ø¸ßË¹Ä£ºı	*/
-	imshow("OPENCV GaussianBlur()½á¹ûÍ¼", result_pic_opencv_blur);
+	GaussianBlur(origin_pic, result_pic_opencv_blur, ksize, sigma, BORDER_DEFAULT);				/*	OPENCVè‡ªå¸¦é«˜æ–¯æ¨¡ç³Š	*/
+	imshow("OPENCV GaussianBlur()ç»“æœå›¾", result_pic_opencv_blur);
 
 	waitKey(0);
 	//return 0;
